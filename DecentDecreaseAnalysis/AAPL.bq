@@ -1,0 +1,63 @@
+WITH found AS (
+SELECT
+  *
+  , (Close_Last - Open)/Open AS Rate
+FROM `spiritual-verve-405100.stock_research.sheet_AAPL` 
+WHERE (Close_Last - Open)/Open <= -0.03
+  AND Date >= '2022-01-01'
+ORDER BY 1
+)
+
+, base AS (
+SELECT
+  fs.*
+  , COALESCE(sa.Date, saa.Date, sab.Date) AS NextDate
+  , COALESCE(sa.Open, saa.Open, sab.Open) AS NextOpen
+  , sa1.Open AS Week1_Open
+  , sa1.Close_Last AS Week1_Close
+  , (sa1.Open - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week1_OpenEarning
+  , (sa1.Close_Last - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week1_CloseEarning
+  , sa2.Open AS Week2_Open
+  , sa2.Close_Last AS Week2_Close
+  , (sa2.Open - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week2_OpenEarning
+  , (sa2.Close_Last - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week2_CloseEarning
+  , sa3.Open AS Week4_Open
+  , sa3.Close_Last AS Week4_Close
+  , (sa3.Open - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week4_OpenEarning
+  , (sa3.Close_Last - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week4_CloseEarning
+  , (sa4.Open - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week8_OpenEarning
+  , (sa4.Close_Last - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week8_CloseEarning
+  , (sa5.Open - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week12_OpenEarning
+  , (sa5.Close_Last - COALESCE(sa.Open, saa.Open, sab.Open)) AS Week12_CloseEarning
+FROM found fs
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sa
+  ON fs.Date = DATE_ADD(sa.Date, INTERVAL -1 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` saa
+  ON fs.Date = DATE_ADD(saa.Date, INTERVAL -2 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sab
+  ON fs.Date = DATE_ADD(sab.Date, INTERVAL -3 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sa1
+  ON fs.Date = DATE_ADD(sa1.Date, INTERVAL -7 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sa2
+  ON fs.Date = DATE_ADD(sa2.Date, INTERVAL -14 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sa3
+  ON fs.Date = DATE_ADD(sa3.Date, INTERVAL -28 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sa4
+  ON fs.Date = DATE_ADD(sa4.Date, INTERVAL -56 DAY)
+LEFT JOIN `spiritual-verve-405100.stock_research.sheet_AAPL` sa5
+  ON fs.Date = DATE_ADD(sa5.Date, INTERVAL -84 DAY)
+)
+
+SELECT
+  COUNT(Week1_OpenEarning) AS Total
+  , SUM(CASE WHEN Week1_OpenEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week1_OpenEarningCount
+  , SUM(CASE WHEN Week1_CloseEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week1_CloseEarningCount
+  , SUM(CASE WHEN Week2_OpenEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week2_OpenEarningCount
+  , SUM(CASE WHEN Week2_CloseEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week2_CloseEarningCount
+  , SUM(CASE WHEN Week4_OpenEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week4_OpenEarningCount
+  , SUM(CASE WHEN Week4_CloseEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week4_CloseEarningCount
+  , SUM(CASE WHEN Week8_OpenEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week8_OpenEarningCount
+  , SUM(CASE WHEN Week8_CloseEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week8_CloseEarningCount
+  , SUM(CASE WHEN Week12_OpenEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week12_OpenEarningCount
+  , SUM(CASE WHEN Week12_CloseEarning > 0 THEN 1 ELSE 0 END)/COUNT(Week1_OpenEarning) AS Week12_CloseEarningCount
+FROM base
