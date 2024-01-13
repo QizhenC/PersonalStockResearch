@@ -1,0 +1,7 @@
+INSERT INTO `spiritual-verve-405100.stock_research.general_sheet` 
+
+SELECT
+  *
+  , ''AS Symbol
+  , CURRENT_DATETIME() AS PartitionDate
+FROM `spiritual-verve-405100.stock_research.general_sheet_aapl`
